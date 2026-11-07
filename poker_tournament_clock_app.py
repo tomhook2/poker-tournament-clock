@@ -161,9 +161,9 @@ class PokerTournamentApp:
         ttk.Button(form, text="Add level", command=self.add_level).grid(row=0, column=8)
 
         table_frame = ttk.Frame(self.blinds_tab)
-        table_frame.pack(fill="both", expand=True)
+        table_frame.pack(fill="x", expand=False)
         cols = ("level", "small", "big", "ante", "minutes")
-        self.level_tree = ttk.Treeview(table_frame, columns=cols, show="headings", selectmode="browse")
+        self.level_tree = ttk.Treeview(table_frame, columns=cols, show="headings", selectmode="browse", height=10)
         headings = [("level", "Level"), ("small", "Small blind"), ("big", "Big blind"),
                     ("ante", "Ante"), ("minutes", "Duration (mins)")]
         for col, heading in headings:
