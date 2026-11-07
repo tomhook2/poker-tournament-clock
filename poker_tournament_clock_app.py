@@ -122,12 +122,6 @@ class PokerTournamentApp:
         ttk.Entry(settings, textvariable=self.rebuy_var, width=10).grid(row=0, column=3, padx=(0, 18))
         ttk.Button(settings, text="Update pot", command=self._refresh_pot).grid(row=0, column=4)
 
-        ttk.Label(
-            settings,
-            text="The pot is calculated as entries × buy-in plus rebuys × rebuy cost.",
-            foreground="#555"
-        ).grid(row=1, column=0, columnspan=5, sticky="w", pady=(8, 0))
-
         list_frame = ttk.Frame(self.players_tab)
         list_frame.pack(fill="both", expand=True)
         columns = ("name", "status", "rebuys", "entries")
