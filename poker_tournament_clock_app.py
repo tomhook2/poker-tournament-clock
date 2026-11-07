@@ -6,7 +6,7 @@ class PokerTournamentApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Poker Tournament Manager")
-        self.root.geometry("1050x720")
+        self.root.geometry("1920x1080")
         self.root.minsize(850, 600)
 
         self.players = []
@@ -18,16 +18,17 @@ class PokerTournamentApp:
             {"type": "break", "minutes": 5},
             {"small": 150, "big": 300, "ante": 0, "minutes": 20},
             {"small": 200, "big": 400, "ante": 0, "minutes": 20},
-            {"small": 300, "big": 600, "ante": 0, "minutes": 20},
+            {"small": 250, "big": 500, "ante": 0, "minutes": 20},
             {"type": "break", "minutes": 5},
+            {"small": 300, "big": 600, "ante": 0, "minutes": 20},
             {"small": 400, "big": 800, "ante": 0, "minutes": 20},
             {"small": 500, "big": 1000, "ante": 0, "minutes": 20},
-            {"small": 700, "big": 1400, "ante": 0, "minutes": 20},
             {"type": "break", "minutes": 5},
+            {"small": 700, "big": 1400, "ante": 0, "minutes": 20},
             {"small": 1000, "big": 2000, "ante": 0, "minutes": 20},
             {"small": 1500, "big": 3000, "ante": 0, "minutes": 20},
-            {"small": 2000, "big": 4000, "ante": 0, "minutes": 20},
             {"type": "break", "minutes": 5},
+            {"small": 2000, "big": 4000, "ante": 0, "minutes": 20},
             {"small": 3000, "big": 6000, "ante": 0, "minutes": 20},
             {"small": 4000, "big": 8000, "ante": 0, "minutes": 60}
         ]
@@ -44,6 +45,7 @@ class PokerTournamentApp:
         self.big_var = tk.StringVar()
         self.ante_var = tk.StringVar(value="0")
         self.minutes_var = tk.StringVar(value="15")
+        self.last_rebuy_level = 10
 
         self._build_ui()
         self._refresh_all()
@@ -66,8 +68,15 @@ class PokerTournamentApp:
         header = ttk.Frame(self.root, padding=(18, 14))
         header.pack(fill="x")
         ttk.Label(header, text="POKER TOURNAMENT", style="Title.TLabel").pack(side="left")
-        self.pot_label = ttk.Label(header, text="Prize pot: £0", style="Metric.TLabel")
-        self.pot_label.pack(side="right")
+        pot_frame = ttk.Frame(header)
+        pot_frame.pack(side="right")
+
+        self.pot_label = ttk.Label(
+            pot_frame,
+            text="Prize pot: £0",
+            style="Metric.TLabel"
+        )
+        self.pot_label.pack()
 
         ttk.Button(
             header,
@@ -169,18 +178,51 @@ class PokerTournamentApp:
                   foreground="#555").pack(side="right")
 
     def _build_clock_tab(self):
-        current = ttk.LabelFrame(self.clock_tab, text="Current level", padding=18)
-        current.pack(fill="x", pady=(0, 14))
-        self.level_title = ttk.Label(current, text="Level 1", style="Title.TLabel")
-        self.level_title.pack()
-        self.blind_display = ttk.Label(current, text="25 / 50  |  Ante 0", style="Metric.TLabel")
-        self.blind_display.pack(pady=(8, 2))
-        self.clock_display = ttk.Label(current, text="15:00", style="Big.TLabel")
-        self.clock_display.pack(pady=(8, 0))
-        
-        # Next blind level display
-        next_frame = ttk.LabelFrame(
+        # Two-column layout: clock on the left, payouts on the right
+        self.clock_tab.columnconfigure(0, weight=3)
+        self.clock_tab.columnconfigure(1, weight=2)
+        self.clock_tab.rowconfigure(0, weight=1)
+
+        left_frame = ttk.Frame(self.clock_tab)
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
+
+        right_frame = ttk.LabelFrame(
             self.clock_tab,
+            text="Prize payouts",
+            padding=12
+        )
+        right_frame.grid(row=0, column=1, sticky="nsew")
+
+        # CURRENT LEVEL
+        current = ttk.LabelFrame(left_frame, text="Current level", padding=18)
+        current.pack(fill="x", pady=(0, 14))
+
+        self.level_title = ttk.Label(
+            current,
+            text="Level 1",
+            style="Title.TLabel"
+        )
+        self.level_title.pack()
+
+        self.blind_display = ttk.Label(
+            current,
+            text="25 / 50",
+            style="Metric.TLabel",
+            wraplength=650,
+            justify="center"
+        )
+        self.blind_display.pack(pady=(8, 2))
+
+        self.clock_display = ttk.Label(
+            current,
+            text="15:00",
+            style="Big.TLabel"
+        )
+        self.clock_display.pack(pady=(8, 0))
+
+        # NEXT BLIND LEVEL
+        next_frame = ttk.LabelFrame(
+            left_frame,
             text="Next blind level",
             padding=10
         )
@@ -188,24 +230,93 @@ class PokerTournamentApp:
 
         self.next_blind_display = ttk.Label(
             next_frame,
-            text="50 / 100 | Ante 0",
+            text="50 / 100",
             style="Next.TLabel",
             foreground="#666666"
         )
         self.next_blind_display.pack()
 
-        controls = ttk.Frame(self.clock_tab)
+        # TIMER CONTROLS
+        controls = ttk.Frame(left_frame)
         controls.pack(pady=8)
-        self.start_button = ttk.Button(controls, text="Start", command=self.toggle_timer, width=14)
-        self.start_button.pack(side="left", padx=5)
-        ttk.Button(controls, text="Reset level timer", command=self.reset_timer).pack(side="left", padx=5)
-        ttk.Button(controls, text="Next level →", command=self.next_level).pack(side="left", padx=5)
 
-        self.level_progress = ttk.Label(self.clock_tab, text="")
+        self.start_button = ttk.Button(
+            controls,
+            text="Start",
+            command=self.toggle_timer,
+            width=14
+        )
+        self.start_button.pack(side="left", padx=5)
+
+        ttk.Button(
+            controls,
+            text="Reset level timer",
+            command=self.reset_timer
+        ).pack(side="left", padx=5)
+
+        ttk.Button(
+            controls,
+            text="Next level →",
+            command=self.next_level
+        ).pack(side="left", padx=5)
+
+        self.level_progress = ttk.Label(left_frame, text="")
         self.level_progress.pack(pady=(14, 0))
-        ttk.Label(self.clock_tab,
-                  text="The clock automatically moves to the next level when the countdown reaches zero.",
-                  foreground="#555").pack(pady=(8, 0))
+
+        ttk.Label(
+            left_frame,
+            text="The clock automatically moves to the next level when the countdown reaches zero.",
+            foreground="#555",
+            wraplength=430
+        ).pack(pady=(8, 0))
+
+        # PAYOUT SUMMARY
+        self.payout_summary = ttk.Label(
+            right_frame,
+            text="Add players to calculate payouts.",
+            justify="left"
+        )
+        self.payout_summary.pack(anchor="w", pady=(0, 12))
+
+        # PAYOUT TABLE
+        payout_columns = ("place", "share", "prize")
+
+        self.payout_tree = ttk.Treeview(
+            right_frame,
+            columns=payout_columns,
+            show="headings",
+            height=7
+        )
+
+        self.payout_tree.heading("place", text="Place")
+        self.payout_tree.heading("share", text="Share")
+        self.payout_tree.heading("prize", text="Payout")
+
+        self.payout_tree.column("place", width=85, anchor="center")
+        self.payout_tree.column("share", width=75, anchor="center")
+        self.payout_tree.column("prize", width=110, anchor="e")
+        self.payout_tree.pack(fill="x", expand=False)
+
+        ttk.Label(
+            right_frame,
+            text=(
+                "Payout structure adjusts automatically to the number "
+                "of entries. Prizes are rounded to £5, with any rounding "
+                "difference added to first place."
+            ),
+            foreground="#555",
+            wraplength=260,
+            justify="left"
+        ).pack(anchor="w", pady=(12, 0))
+
+        # REBUY COUNTDOWN
+        self.rebuy_countdown_label = ttk.Label(
+            right_frame,
+            text="Rebuys close in 10 levels",
+            style="Next.TLabel",
+            foreground="#666666"
+        )
+        self.rebuy_countdown_label.pack(anchor="w", pady=(15, 0))
 
     # Players
     def add_player(self):
@@ -232,6 +343,22 @@ class PokerTournamentApp:
         return index
 
     def add_rebuy(self):
+        grace_seconds = 5 * 60
+
+        if (
+            self.current_level > self.last_rebuy_level
+            or (
+                self.current_level == self.last_rebuy_level
+                and self.seconds_left <= 0
+                and grace_seconds <= 0
+            )
+        ):
+            messagebox.showwarning(
+                "Rebuys Closed",
+                "The rebuy period has ended."
+            )
+            return
+
         index = self._selected_player()
         if index is None:
             return
@@ -302,15 +429,89 @@ class PokerTournamentApp:
             rebuy_cost = self._money_value(self.rebuy_var, "Rebuy")
         except ValueError as error:
             self.pot_label.config(text=str(error))
+            self.payout_summary.config(text="Check your buy-in and rebuy amounts.")
+            for item in self.payout_tree.get_children():
+                self.payout_tree.delete(item)
             return
+
         initial_entries = len(self.players)
         total_rebuys = sum(p["rebuys"] for p in self.players)
+
+        total_entries = initial_entries + total_rebuys
         pot = initial_entries * buy_in + total_rebuys * rebuy_cost
-        self.pot_label.config(text=f"Prize pot: {self.currency_var.get()}{pot:,.2f}")
+
+        self.pot_label.config(
+            text=f"Prize pot: {self.currency_var.get()}{pot:,.2f}"
+        )
+
         self.players_summary.config(
             text=f"{sum(1 for p in self.players if p['active'])} still playing  •  "
                  f"{len(self.players)} total players  •  {total_rebuys} rebuys"
         )
+
+        self._refresh_payouts(pot, total_entries, total_rebuys)
+
+
+    def _refresh_payouts(self, pot, total_entries, total_rebuys):
+        # Clear the previous payout table
+        for item in self.payout_tree.get_children():
+            self.payout_tree.delete(item)
+
+        if total_entries == 0 or pot <= 0:
+            self.payout_summary.config(
+                text="Add players to calculate payouts."
+            )
+            return
+
+        # Choose the number of paid places and their percentages
+        if total_entries <= 5:
+            percentages = [100]
+        elif total_entries <= 10:
+            percentages = [65, 35]
+        elif total_entries <= 20:
+            percentages = [55, 30, 15]
+        elif total_entries <= 30:
+            percentages = [45, 30, 15, 10]
+        else:
+            percentages = [40, 25, 15, 12, 8]
+
+        # Round an amount to the nearest £5
+        def round_to_five(amount):
+            return int(amount / 5 + 0.5) * 5
+
+        # Calculate each payout
+        payouts = [
+            round_to_five(pot * percentage / 100)
+            for percentage in percentages
+        ]
+
+        # Adjust first place so the payouts add up exactly to the pot
+        payouts[0] = round(pot - sum(payouts[1:]), 2)
+
+        # Update the summary
+        self.payout_summary.config(
+            text=(
+                f"Total entries: {total_entries}\n"
+                f"Unique players: {len(self.players)}\n"
+                f"Rebuys: {total_rebuys}\n"
+                f"Prize pot: £{pot:,.2f}\n"
+                f"Paid places: {len(percentages)}"
+            )
+        )
+
+        # Fill the payout table
+        for index, (percentage, payout) in enumerate(
+            zip(percentages, payouts), start=1
+        ):
+            self.payout_tree.insert(
+                "",
+                "end",
+                values=(
+                    f"{index}{'st' if index == 1 else 'nd' if index == 2 else 'rd' if index == 3 else 'th'}",
+                    f"{percentage}%",
+                    f"£{payout:,.2f}"
+                )
+            )
 
     # Blind levels
     def add_level(self):
@@ -512,8 +713,25 @@ class PokerTournamentApp:
             next_text = "Tournament finished"
 
         self.next_blind_display.config(text=next_text)
+        self._update_rebuy_countdown()
 
+    def _update_rebuy_countdown(self):
+        if self.current_level < self.last_rebuy_level:
+            total_seconds = max(0, self.seconds_left)
 
+            # Add the full duration of every remaining level
+            for level_index in range(self.current_level + 1, self.last_rebuy_level):
+                total_seconds += self.levels[level_index]["minutes"] * 60
+
+            hours, remainder = divmod(total_seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+
+            self.rebuy_countdown_label.config(
+                text=f"Rebuys close in {hours:02d}:{minutes:02d}:{seconds:02d}"
+            )
+        else:
+            self.rebuy_countdown_label.config(text="REBUYS CLOSED")
+    
     def reset_tournament(self):
         confirm = messagebox.askyesno(
             "Reset Tournament",
