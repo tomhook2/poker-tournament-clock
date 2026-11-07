@@ -45,7 +45,7 @@ class PokerTournamentApp:
         self.big_var = tk.StringVar()
         self.ante_var = tk.StringVar(value="0")
         self.minutes_var = tk.StringVar(value="15")
-        self.last_rebuy_level = 10
+        self.last_rebuy_level = 13
 
         self._build_ui()
         self._refresh_all()
