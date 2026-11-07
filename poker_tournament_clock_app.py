@@ -123,9 +123,9 @@ class PokerTournamentApp:
         ttk.Button(settings, text="Update pot", command=self._refresh_pot).grid(row=0, column=4)
 
         list_frame = ttk.Frame(self.players_tab)
-        list_frame.pack(fill="both", expand=True)
+        list_frame.pack(fill="x", expand=False)
         columns = ("name", "status", "rebuys", "entries")
-        self.player_tree = ttk.Treeview(list_frame, columns=columns, show="headings", selectmode="browse", height=8)
+        self.player_tree = ttk.Treeview(list_frame, columns=columns, show="headings", selectmode="browse", height=10)
         for col, heading, width in [
             ("name", "Player", 300), ("status", "Status", 150),
             ("rebuys", "Rebuys", 120), ("entries", "Total entries", 140)
