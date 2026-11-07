@@ -15,15 +15,19 @@ class PokerTournamentApp:
             {"small": 50, "big": 100, "ante": 0, "minutes": 15},
             {"small": 75, "big": 150, "ante": 0, "minutes": 15},
             {"small": 100, "big": 200, "ante": 0, "minutes": 15},
+            {"type": "break", "minutes": 5},
             {"small": 150, "big": 300, "ante": 0, "minutes": 20},
             {"small": 200, "big": 400, "ante": 0, "minutes": 20},
             {"small": 300, "big": 600, "ante": 0, "minutes": 20},
+            {"type": "break", "minutes": 5},
             {"small": 400, "big": 800, "ante": 0, "minutes": 20},
             {"small": 500, "big": 1000, "ante": 0, "minutes": 20},
             {"small": 700, "big": 1400, "ante": 0, "minutes": 20},
+            {"type": "break", "minutes": 5},
             {"small": 1000, "big": 2000, "ante": 0, "minutes": 20},
             {"small": 1500, "big": 3000, "ante": 0, "minutes": 20},
             {"small": 2000, "big": 4000, "ante": 0, "minutes": 20},
+            {"type": "break", "minutes": 5},
             {"small": 3000, "big": 6000, "ante": 0, "minutes": 20},
             {"small": 4000, "big": 8000, "ante": 0, "minutes": 60}
         ]
@@ -32,8 +36,8 @@ class PokerTournamentApp:
         self.timer_running = False
         self.timer_job = None
 
-        self.buy_in_var = tk.StringVar(value="20")
-        self.rebuy_var = tk.StringVar(value="20")
+        self.buy_in_var = tk.StringVar(value="10")
+        self.rebuy_var = tk.StringVar(value="10")
         self.currency_var = tk.StringVar(value="£")
         self.player_name_var = tk.StringVar()
         self.small_var = tk.StringVar()
@@ -52,10 +56,12 @@ class PokerTournamentApp:
         except tk.TclError:
             pass
         style.configure("Title.TLabel", font=("Segoe UI", 25, "bold"))
-        style.configure("Big.TLabel", font=("Segoe UI", 80, "bold"))
-        style.configure("Metric.TLabel", font=("Segoe UI", 45, "bold"))
+        style.configure("Big.TLabel", font=("Segoe UI", 100, "bold"))
+        style.configure("Metric.TLabel", font=("Segoe UI", 60, "bold"))
         style.configure("Treeview", rowheight=27, font=("Segoe UI", 15))
         style.configure("Treeview.Heading", font=("Segoe UI", 15, "bold"))
+        style.configure("Next.TLabel", font=("Segoe UI", 25, "bold"))
+        style.configure("NextTitle.TLabel", font=("Segoe UI", 18, "bold"))
 
         header = ttk.Frame(self.root, padding=(18, 14))
         header.pack(fill="x")
@@ -171,6 +177,22 @@ class PokerTournamentApp:
         self.blind_display.pack(pady=(8, 2))
         self.clock_display = ttk.Label(current, text="15:00", style="Big.TLabel")
         self.clock_display.pack(pady=(8, 0))
+        
+        # Next blind level display
+        next_frame = ttk.LabelFrame(
+            self.clock_tab,
+            text="Next blind level",
+            padding=10
+        )
+        next_frame.pack(fill="x", pady=(0, 10))
+
+        self.next_blind_display = ttk.Label(
+            next_frame,
+            text="50 / 100 | Ante 0",
+            style="Next.TLabel",
+            foreground="#666666"
+        )
+        self.next_blind_display.pack()
 
         controls = ttk.Frame(self.clock_tab)
         controls.pack(pady=8)
@@ -354,10 +376,27 @@ class PokerTournamentApp:
     def _refresh_levels(self):
         for item in self.level_tree.get_children():
             self.level_tree.delete(item)
+
         for i, level in enumerate(self.levels):
-            self.level_tree.insert("", "end", iid=str(i),
-                                   values=(i + 1, level["small"], level["big"],
-                                           level["ante"], level["minutes"]))
+
+            if level.get("type") == "break":
+                values = (i + 1, "BREAK", "—", "—", level["minutes"])
+            else:
+                values = (
+                    i + 1,
+                    level["small"],
+                    level["big"],
+                    level["ante"],
+                    level["minutes"]
+                )
+
+            self.level_tree.insert(
+                "",
+                "end",
+                iid=str(i),
+                values=values
+            )
+
         self._update_clock_display()
 
     # Tournament clock
@@ -410,22 +449,70 @@ class PokerTournamentApp:
             messagebox.showinfo("Final level", "You are already on the final blind level.")
         self._update_clock_display()
 
+    
     def _update_clock_display(self):
         if not hasattr(self, "level_title"):
             return
+
         if not self.levels:
             self.level_title.config(text="No blind levels")
             self.blind_display.config(text="Add a level in the Blind Levels tab")
             self.clock_display.config(text="--:--")
             self.level_progress.config(text="")
+            self.next_blind_display.config(text="No upcoming level")
             return
+
         self.current_level = max(0, min(self.current_level, len(self.levels) - 1))
+
         level = self.levels[self.current_level]
+
         mins, secs = divmod(max(0, self.seconds_left), 60)
+
         self.level_title.config(text=f"LEVEL {self.current_level + 1}")
-        self.blind_display.config(text=f"{level['small']:,} / {level['big']:,}   |   Ante {level['ante']:,}")
+
+        if level.get("type") == "break":
+            self.blind_display.config(text="break time - go grab a cold one")
+        else:
+            if level["ante"] > 0:
+                current_text = (
+                    f"{level['small']:,} / {level['big']:,} "
+                    f"| Ante {level['ante']:,}"
+                )
+            else:
+                current_text = f"{level['small']:,} / {level['big']:,}"
+
+            self.blind_display.config(text=current_text)
+
         self.clock_display.config(text=f"{mins:02d}:{secs:02d}")
-        self.level_progress.config(text=f"Level {self.current_level + 1} of {len(self.levels)}")
+
+        self.level_progress.config(
+            text=f"Level {self.current_level + 1} of {len(self.levels)}"
+        )
+
+        # Update next blind level
+        next_index = self.current_level + 1
+
+        if next_index < len(self.levels):
+            next_level = self.levels[next_index]
+
+            if next_level.get("type") == "break":
+                next_text = f"BREAK — {next_level['minutes']} minutes"
+            else:
+                if next_level["ante"] > 0:
+                    next_text = (
+                        f"{next_level['small']:,} / "
+                        f"{next_level['big']:,} | "
+                        f"Ante {next_level['ante']:,}"
+                    )
+                else:
+                    next_text = (
+                        f"{next_level['small']:,} / {next_level['big']:,}"
+                    )
+        else:
+            next_text = "Tournament finished"
+
+        self.next_blind_display.config(text=next_text)
+
 
     def reset_tournament(self):
         confirm = messagebox.askyesno(
