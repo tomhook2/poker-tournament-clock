@@ -57,13 +57,13 @@ class PokerTournamentApp:
             style.theme_use("clam")
         except tk.TclError:
             pass
-        style.configure("Title.TLabel", font=("Segoe UI", 25, "bold"))
-        style.configure("Big.TLabel", font=("Segoe UI", 100, "bold"))
-        style.configure("Metric.TLabel", font=("Segoe UI", 60, "bold"))
+        style.configure("Title.TLabel", font=("Segoe UI", 22, "bold"))
+        style.configure("Big.TLabel", font=("Segoe UI", 75, "bold"))
+        style.configure("Metric.TLabel", font=("Segoe UI", 45, "bold"))
         style.configure("Treeview", rowheight=27, font=("Segoe UI", 15))
         style.configure("Treeview.Heading", font=("Segoe UI", 15, "bold"))
-        style.configure("Next.TLabel", font=("Segoe UI", 25, "bold"))
-        style.configure("NextTitle.TLabel", font=("Segoe UI", 18, "bold"))
+        style.configure("Next.TLabel", font=("Segoe UI", 22, "bold"))
+        style.configure("NextTitle.TLabel", font=("Segoe UI", 16, "bold"))
 
         header = ttk.Frame(self.root, padding=(18, 14))
         header.pack(fill="x")
@@ -99,28 +99,39 @@ class PokerTournamentApp:
         self._build_clock_tab()
 
     def _build_players_tab(self):
-        settings = ttk.LabelFrame(self.players_tab, text="Tournament settings", padding=10)
-        settings.pack(fill="x", pady=(0, 12))
+        top_frame = ttk.Frame(self.players_tab)
+        top_frame.pack(fill="x", pady=(0, 12))
+
+        # ADD A PLAYER - LEFT
+        add_frame = ttk.LabelFrame(top_frame, text="Add a player", padding=10)
+        add_frame.pack(side="left", fill="y", padx=(0, 10))
+
+        name_entry = ttk.Entry(add_frame, textvariable=self.player_name_var, width=28)
+        name_entry.pack(side="left", padx=(0, 8))
+        name_entry.bind("<Return>", lambda _event: self.add_player())
+
+        ttk.Button(add_frame, text="Add player", command=self.add_player).pack(side="left")
+
+        # TOURNAMENT SETTINGS - RIGHT
+        settings = ttk.LabelFrame(top_frame, text="Tournament settings", padding=10)
+        settings.pack(side="left", fill="x", expand=True)
 
         ttk.Label(settings, text="Buy-in (£)").grid(row=0, column=0, padx=(0, 6), sticky="w")
         ttk.Entry(settings, textvariable=self.buy_in_var, width=10).grid(row=0, column=1, padx=(0, 18))
         ttk.Label(settings, text="Rebuy (£)").grid(row=0, column=2, padx=(0, 6), sticky="w")
         ttk.Entry(settings, textvariable=self.rebuy_var, width=10).grid(row=0, column=3, padx=(0, 18))
         ttk.Button(settings, text="Update pot", command=self._refresh_pot).grid(row=0, column=4)
-        ttk.Label(settings, text="The pot is calculated as entries × buy-in plus rebuys × rebuy cost.",
-                  foreground="#555").grid(row=1, column=0, columnspan=5, sticky="w", pady=(8, 0))
 
-        add_frame = ttk.LabelFrame(self.players_tab, text="Add a player", padding=10)
-        add_frame.pack(fill="x", pady=(0, 12))
-        name_entry = ttk.Entry(add_frame, textvariable=self.player_name_var, width=28)
-        name_entry.pack(side="left", padx=(0, 8))
-        name_entry.bind("<Return>", lambda _event: self.add_player())
-        ttk.Button(add_frame, text="Add player", command=self.add_player).pack(side="left")
+        ttk.Label(
+            settings,
+            text="The pot is calculated as entries × buy-in plus rebuys × rebuy cost.",
+            foreground="#555"
+        ).grid(row=1, column=0, columnspan=5, sticky="w", pady=(8, 0))
 
         list_frame = ttk.Frame(self.players_tab)
         list_frame.pack(fill="both", expand=True)
         columns = ("name", "status", "rebuys", "entries")
-        self.player_tree = ttk.Treeview(list_frame, columns=columns, show="headings", selectmode="browse")
+        self.player_tree = ttk.Treeview(list_frame, columns=columns, show="headings", selectmode="browse", height=8)
         for col, heading, width in [
             ("name", "Player", 300), ("status", "Status", 150),
             ("rebuys", "Rebuys", 120), ("entries", "Total entries", 140)
