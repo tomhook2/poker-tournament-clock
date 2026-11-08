@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-
+import winsound
 
 class PokerTournamentApp:
     def __init__(self, root):
@@ -630,6 +630,9 @@ class PokerTournamentApp:
 
         if self.seconds_left <= 0:
 
+            # Longer beep when the level reaches zero
+            winsound.Beep(1500, 800)
+
             if self.current_level < len(self.levels) - 1:
                 previous_level = self.levels[self.current_level]
 
@@ -648,11 +651,10 @@ class PokerTournamentApp:
                         'Once the current hand has finished, click "OK" to begin break'
                     )
 
-                    # Start break when OK is clicked
                     self.toggle_timer()
                     return
 
-                # Break has ended and the next blind is ready
+                # Break has ended: move to next level and wait
                 if previous_level.get("type") == "break":
                     self._stop_timer()
                     self._update_clock_display()
@@ -662,20 +664,25 @@ class PokerTournamentApp:
                         'Once everyone is seated, click "OK" to begin the next blind level'
                     )
 
-                    # Start next blind when OK is clicked
                     self.toggle_timer()
                     return
 
             else:
                 self._stop_timer()
+
                 messagebox.showinfo(
                     "Tournament levels complete",
                     "You have reached the final blind level."
                 )
+
                 self._update_clock_display()
                 return
 
         else:
+            # Short warning beeps during the final 3 seconds
+            if self.seconds_left in (3, 2, 1):
+                winsound.Beep(1000, 200)
+
             self.seconds_left -= 1
 
         self.timer_job = self.root.after(1000, self._tick)
