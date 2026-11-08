@@ -14,7 +14,7 @@ class PokerTournamentApp:
             {"small": 25, "big": 50, "ante": 0, "minutes": 15},
             {"small": 50, "big": 100, "ante": 0, "minutes": 15},
             {"small": 75, "big": 150, "ante": 0, "minutes": 15},
-            {"small": 100, "big": 200, "ante": 0, "minutes": 20},
+            {"small": 100, "big": 200, "ante": 0, "minutes": 15},
             {"type": "break", "minutes": 5},
             {"small": 150, "big": 300, "ante": 0, "minutes": 20},
             {"small": 200, "big": 400, "ante": 0, "minutes": 20},
