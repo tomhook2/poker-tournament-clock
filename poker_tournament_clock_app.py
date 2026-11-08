@@ -270,7 +270,7 @@ class PokerTournamentApp:
 
         ttk.Label(
             left_frame,
-            text="The clock automatically moves to the next level when the countdown reaches zero.",
+            text="The clock automatically moves to the next level when the countdown reaches zero (except for break).",
             foreground="#555",
             wraplength=430
         ).pack(pady=(8, 0))
@@ -305,9 +305,7 @@ class PokerTournamentApp:
         ttk.Label(
             right_frame,
             text=(
-                "Payout structure adjusts automatically to the number "
-                "of entries. Prizes are rounded to £5, with any rounding "
-                "difference added to first place."
+                "Payout structure adjusts automatically to the number of entries. Prizes are rounded to £5, with any rounding difference added to first place."
             ),
             foreground="#555",
             wraplength=260,
@@ -623,22 +621,65 @@ class PokerTournamentApp:
             self.root.after_cancel(self.timer_job)
             self.timer_job = None
 
+
     def _tick(self):
         self._update_clock_display()
+
         if not self.timer_running:
             return
+
         if self.seconds_left <= 0:
+
             if self.current_level < len(self.levels) - 1:
+                previous_level = self.levels[self.current_level]
+
                 self.current_level += 1
                 self.seconds_left = self.levels[self.current_level]["minutes"] * 60
+
+                current_level = self.levels[self.current_level]
+
+                # A normal level has ended and a break is next
+                if current_level.get("type") == "break":
+                    self._stop_timer()
+                    self._update_clock_display()
+
+                    messagebox.showinfo(
+                        "Break",
+                        'Once the current hand has finished, click "OK" to begin break'
+                    )
+
+                    # Start break when OK is clicked
+                    self.toggle_timer()
+                    return
+
+                # Break has ended and the next blind is ready
+                if previous_level.get("type") == "break":
+                    self._stop_timer()
+                    self._update_clock_display()
+
+                    messagebox.showinfo(
+                        "Break finished",
+                        'Once everyone is seated, click "OK" to begin the next blind level'
+                    )
+
+                    # Start next blind when OK is clicked
+                    self.toggle_timer()
+                    return
+
             else:
                 self._stop_timer()
-                messagebox.showinfo("Tournament levels complete", "You have reached the final blind level.")
+                messagebox.showinfo(
+                    "Tournament levels complete",
+                    "You have reached the final blind level."
+                )
                 self._update_clock_display()
                 return
+
         else:
             self.seconds_left -= 1
+
         self.timer_job = self.root.after(1000, self._tick)
+
 
     def reset_timer(self):
         self._stop_timer()
@@ -677,7 +718,7 @@ class PokerTournamentApp:
         self.level_title.config(text=f"LEVEL {self.current_level + 1}")
 
         if level.get("type") == "break":
-            self.blind_display.config(text="break time - go grab a cold one")
+            self.blind_display.config(text="Break")
         else:
             if level["ante"] > 0:
                 current_text = (
@@ -702,7 +743,7 @@ class PokerTournamentApp:
             next_level = self.levels[next_index]
 
             if next_level.get("type") == "break":
-                next_text = f"BREAK — {next_level['minutes']} minutes"
+                next_text = f"Break — {next_level['minutes']} minutes"
             else:
                 if next_level["ante"] > 0:
                     next_text = (
