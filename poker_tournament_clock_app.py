@@ -182,6 +182,20 @@ class PokerTournamentApp:
         ttk.Label(actions, text="Select a level, then use Move up/down to change the order.",
                   foreground="#555").pack(side="right")
 
+    def end_break(self):
+        if not self.levels:
+            return
+
+        if self.levels[self.current_level].get("type") != "break":
+            return
+
+        if self.current_level < len(self.levels) - 1:
+            self.current_level += 1
+            self.seconds_left = self.levels[self.current_level]["minutes"] * 60
+
+        self._stop_timer()
+        self._update_clock_display()
+
     def _build_clock_tab(self):
         # Two-column layout: clock on the left, payouts on the right
         self.clock_tab.columnconfigure(0, weight=3)
@@ -264,6 +278,15 @@ class PokerTournamentApp:
             text="Next level →",
             command=self.next_level
         ).pack(side="left", padx=5)
+
+        self.end_break_button = ttk.Button(
+            controls,
+            text="End Break / Start Next Level",
+            command=self.end_break,
+            width=25
+        )
+        self.end_break_button.pack(side="left", padx=5)
+        self.end_break_button.pack_forget()
 
         self.level_progress = ttk.Label(left_frame, text="")
         self.level_progress.pack(pady=(14, 0))
@@ -625,19 +648,41 @@ class PokerTournamentApp:
 
     def _tick(self):
         self._update_clock_display()
+
         if not self.timer_running:
             return
+
         if self.seconds_left <= 0:
+
+            # If this is a break, stop and wait for manual confirmation
+            if self.levels[self.current_level].get("type") == "break":
+                self._stop_timer()
+                self._update_clock_display()
+                return
+
+            # Otherwise move to the next level
             if self.current_level < len(self.levels) - 1:
                 self.current_level += 1
                 self.seconds_left = self.levels[self.current_level]["minutes"] * 60
+
+                # Automatically stop when arriving at a break
+                if self.levels[self.current_level].get("type") == "break":
+                    self._stop_timer()
+                    self._update_clock_display()
+                    return
+
             else:
                 self._stop_timer()
-                messagebox.showinfo("Tournament levels complete", "You have reached the final blind level.")
+                messagebox.showinfo(
+                    "Tournament levels complete",
+                    "You have reached the final blind level."
+                )
                 self._update_clock_display()
                 return
+
         else:
             self.seconds_left -= 1
+
         self.timer_job = self.root.after(1000, self._tick)
 
     def reset_timer(self):
@@ -719,6 +764,12 @@ class PokerTournamentApp:
 
         self.next_blind_display.config(text=next_text)
         self._update_rebuy_countdown()
+
+        # Show manual start button only during breaks
+        if level.get("type") == "break":
+            self.end_break_button.pack(side="left", padx=5)
+        else:
+            self.end_break_button.pack_forget()
 
     def _update_rebuy_countdown(self):
         if self.current_level < self.last_rebuy_level:
